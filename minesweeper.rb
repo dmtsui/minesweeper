@@ -12,6 +12,7 @@ class Minesweeper
 
   def calc_display_board
     #display_board = Array.new(@board_size, Array.new(@board_size, '*'))
+    @display_board = ""
     board = []
     position = 0
     @board_size.times do |row|
@@ -27,23 +28,32 @@ class Minesweeper
     board.each_with_index do |row, index|
       @display_board += "board row #{index}: #{row}\n"
     end
+    display_board
   end
 
   def display_board
+    system('clear')
     puts @display_board
   end
 
-  def get_user_position
-    puts "Enter coordinate (x y): "
+
+
+  def get_user_decision
+    puts "Enter state and coordinate f/r (x y): "
     input = gets.chomp.split(" ")
-    x = input[0].to_i
-    y = input[1].to_i
-    position = ((x / @board_size) * @board_size) + y
+    state = input[0]
+    x = input[1].to_i
+    y = input[2].to_i
+    position = (x * @board_size) + y
+    set_status(state, position)
   end
 
-  def set_status(state)
-    position = get_user_position
-    @board_nodes[position].state = true
+  def set_status(state, position)
+    if state == "f"
+      @board_nodes[position].flag = true
+    else
+      @board_nodes[position].revealed = true
+    end
   end
 
   # def set_revealed
@@ -59,13 +69,19 @@ class Minesweeper
 
   def play
     set_bombs(10)
-    calc_display_board
-    # @board_nodes.each do |node|
-    #   if node.bomb
-    #     puts "bomb at node #{node.position} #{node.display}"
-    #   end
-    # end
-    display_board
+    game_over = false
+
+    while true
+      system('clear')
+      calc_display_board
+
+      # @board_nodes.each do |node|
+      #   if node.bomb
+      #     puts "bomb at node #{node.position} #{node.display}"
+      #   end
+      # end
+      get_user_decision
+    end
   end
 
 end
@@ -88,7 +104,7 @@ class BoardNode
   def display
     return "F" if @flag
     return "@" if @bomb
-    return " " if @revealed
+    return "_" if @revealed
     return "*"
   end
 
