@@ -1,3 +1,4 @@
+require 'debugger'
 class Minesweeper
   attr_accessor :board_size, :board_nodes, :display_board
 
@@ -8,6 +9,10 @@ class Minesweeper
     (@board_size ** 2).times do |position|
       @board_nodes << BoardNode.new(position)
     end
+    @board_nodes.each do |node|
+      node.add_neighbors(@board_size, @board_nodes)
+    end
+
   end
 
   def calc_display_board
@@ -36,16 +41,43 @@ class Minesweeper
     puts @display_board
   end
 
+  def reveal_spaces(position)
+    puts "in reveal_spaces position is #{@board_node[position].position}"
+    neighbors = @board_node[position].neighbors
 
+    puts "neighbors are #{neighbors}"
+
+    if no_bombs?(neighbors)
+      reveal_neighbors(neighbors)
+    end
+  end
+
+  def reveal_neighbors(neighbors)
+    neighbors.each do |neighbor|
+      neighbor.revealed = true
+    end
+  end
+
+  def no_bombs?(neighbors)
+    neighbors.each do |neighbor|
+      return false if neighbor.bomb
+    end
+    true
+  end
 
   def get_user_decision
+
     puts "Enter state and coordinate f/r (x y): "
     input = gets.chomp.split(" ")
+    debugger
     state = input[0]
     x = input[1].to_i
     y = input[2].to_i
     position = (x * @board_size) + y
     set_status(state, position)
+    #puts "initial space before reveal #{position}"
+    #puts "initial children before reveal #{@board_nodes[position].position}"
+    #reveal_spaces(position)
   end
 
   def set_status(state, position)
@@ -55,11 +87,6 @@ class Minesweeper
       @board_nodes[position].revealed = true
     end
   end
-
-  # def set_revealed
-  #   position = get_user_position
-  #   @board_nodes[position].revealed = true
-  # end
 
   def set_bombs(num_bombs)
     @board_nodes.sample(num_bombs).each do |node|
@@ -71,15 +98,9 @@ class Minesweeper
     set_bombs(10)
     game_over = false
 
-    while true
+    until game_over
       system('clear')
       calc_display_board
-
-      # @board_nodes.each do |node|
-      #   if node.bomb
-      #     puts "bomb at node #{node.position} #{node.display}"
-      #   end
-      # end
       get_user_decision
     end
   end
@@ -108,7 +129,7 @@ class BoardNode
     return "*"
   end
 
-  def add_neighbors(board_size, board_nodes)
+  def add_neighbors(board_size)
     all_positions = [@position - board_size - 1, @position - board_size,
                     @position - board_size + 1, @position - 1,
                     @position + 1, @position + board_size - 1,
@@ -119,9 +140,10 @@ class BoardNode
     all_positions = no_bottom_edge(board_size, board_nodes, all_positions)
     all_positions = no_left_edge(board_size, board_nodes, all_positions)
     all_positions = no_right_edge(board_size, board_nodes, all_positions)
-    all_positions.each do |position|
-      @neighbors << board_nodes[position]
-    end
+    # all_positions.each do |position|
+    #   @neighbors << board_nodes[position]
+    # end
+    @neighbors = all_positions
   end
 
   def no_top_edge(board_size, board_nodes, all_positions)
@@ -158,6 +180,9 @@ class BoardNode
 end
 
 mines = Minesweeper.new(9)
+# mines.board_nodes[4].neighbors.each do |node|
+#   puts "neighbor is #{node.position}"
+# end
 mines.play
 
 #
