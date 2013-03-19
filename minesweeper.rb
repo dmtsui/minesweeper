@@ -1,8 +1,9 @@
 require 'debugger'
 class Minesweeper
-  attr_accessor :board_size, :board_nodes, :display_board
+  attr_accessor :board_size, :board_nodes, :display_board, :spaces_cleared
 
   def initialize(board_size)
+    @spaces_cleared = 0
     @board_size = board_size
     @board_nodes = []
     @display_board = ""
@@ -10,7 +11,7 @@ class Minesweeper
       @board_nodes << BoardNode.new(position)
     end
     @board_nodes.each do |node|
-      node.add_neighbors(@board_size, @board_nodes)
+      node.add_neighbors(@board_size)
     end
 
   end
@@ -42,42 +43,60 @@ class Minesweeper
   end
 
   def reveal_spaces(position)
-    puts "in reveal_spaces position is #{@board_node[position].position}"
-    neighbors = @board_node[position].neighbors
+    #debugger
+    #puts "in reveal_spaces position is #{@board_nodes[position].position}"
+    neighbors = @board_nodes[position].neighbors
 
-    puts "neighbors are #{neighbors}"
+    #puts "neighbors are #{neighbors}"
 
-    if no_bombs?(neighbors)
-      reveal_neighbors(neighbors)
-    end
+      if no_bombs?(neighbors)
+        reveal_neighbors(neighbors)
+      end
   end
+
+  # def neighbors_not_revealed(n)
+  #   unrevealed = []
+  #   @board_nodes[position].neighbors.each do |neighbor|
+  #     unless @board_nodes[neighbor].revealed
+  #       unrevealed << neighbor
+  #     end
+  #   end
+  #   puts "#{unrevealed}"
+  # end
 
   def reveal_neighbors(neighbors)
     neighbors.each do |neighbor|
-      neighbor.revealed = true
+      @board_nodes[neighbor].revealed = true
+      @spaces_cleared +=1
     end
   end
 
   def no_bombs?(neighbors)
     neighbors.each do |neighbor|
-      return false if neighbor.bomb
+      return false if @board_nodes[neighbor].bomb
     end
     true
   end
 
   def get_user_decision
-
+    puts "spaces cleared = #{@spaces_cleared}"
     puts "Enter state and coordinate f/r (x y): "
     input = gets.chomp.split(" ")
-    debugger
+    #debugger
     state = input[0]
     x = input[1].to_i
     y = input[2].to_i
     position = (x * @board_size) + y
-    set_status(state, position)
-    #puts "initial space before reveal #{position}"
-    #puts "initial children before reveal #{@board_nodes[position].position}"
-    #reveal_spaces(position)
+    [state, position]
+  end
+
+  def is_bomb?(position)
+    return true if @board_nodes[position].bomb
+    false
+  end
+
+  def win?
+    return true if @spaces_cleared  >= @board_size**2 - 10
   end
 
   def set_status(state, position)
@@ -85,6 +104,7 @@ class Minesweeper
       @board_nodes[position].flag = true
     else
       @board_nodes[position].revealed = true
+      @spaces_cleared += 1
     end
   end
 
@@ -101,7 +121,17 @@ class Minesweeper
     until game_over
       system('clear')
       calc_display_board
-      get_user_decision
+      input = get_user_decision
+      if is_bomb?(input[1])
+        puts "BOMB!"
+        break
+      end
+      set_status(input[0], input[1])
+      reveal_spaces(input[1])
+      if win?
+        puts "You win!"
+        break
+      end
     end
   end
 
@@ -136,17 +166,17 @@ class BoardNode
                     @position + board_size, @position + board_size + 1]
     #puts "all_possitions #{all_positions}"
 
-    all_positions = no_top_edge(board_size, board_nodes, all_positions)
-    all_positions = no_bottom_edge(board_size, board_nodes, all_positions)
-    all_positions = no_left_edge(board_size, board_nodes, all_positions)
-    all_positions = no_right_edge(board_size, board_nodes, all_positions)
+    all_positions = no_top_edge(board_size, all_positions)
+    all_positions = no_bottom_edge(board_size, all_positions)
+    all_positions = no_left_edge(board_size, all_positions)
+    all_positions = no_right_edge(board_size, all_positions)
     # all_positions.each do |position|
     #   @neighbors << board_nodes[position]
     # end
     @neighbors = all_positions
   end
 
-  def no_top_edge(board_size, board_nodes, all_positions)
+  def no_top_edge(board_size, all_positions)
     if @position / board_size == 0
       all_positions -= [@position - board_size - 1, @position - board_size, @position - board_size + 1]
       #puts "delete bottom edge! #{[@position - board_size - 1, @position - board_size, @position - board_size + 1]}"
@@ -154,7 +184,7 @@ class BoardNode
     all_positions
   end
 
-  def no_bottom_edge(board_size, board_nodes, all_positions)
+  def no_bottom_edge(board_size, all_positions)
     if @position / board_size == board_size - 1
       all_positions -= [@position + board_size - 1, @position + board_size, @position + board_size + 1]
       #puts "delete bottom edge! #{[@position + board_size - 1, @position + board_size, @position + board_size + 1]}"
@@ -162,7 +192,7 @@ class BoardNode
     all_positions
   end
 
-  def no_left_edge(board_size, board_nodes, all_positions)
+  def no_left_edge(board_size, all_positions)
     if @position % board_size == 0
       all_positions -= [@position - 1, @position - board_size - 1,@position + board_size - 1]
       #puts "delete left edge! #{[@position - 1, @position_board_size + 1, @position + board_size + 1]}"
@@ -170,7 +200,7 @@ class BoardNode
     all_positions
   end
 
-  def no_right_edge(board_size, board_nodes, all_positions)
+  def no_right_edge(board_size, all_positions)
     if @position % board_size == board_size - 1
       all_positions -= [@position + 1, @position - board_size + 1, @position + board_size + 1]
       #puts "delete right edge! #{[@position + 1, @position - board_size - 1, @position + board_size - 1]}"
