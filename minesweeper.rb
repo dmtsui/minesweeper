@@ -15,7 +15,9 @@ class Minesweeper
     end
 
   end
-
+  # since you're recalculating display board each time, doesn't seem
+  # necessary to have a @display_board instance variable. Just call
+  # the calc function when you want to display it
   def calc_display_board
     #display_board = Array.new(@board_size, Array.new(@board_size, '*'))
     @display_board = ""
@@ -70,7 +72,8 @@ class Minesweeper
       @spaces_cleared +=1
     end
   end
-
+  # it's a bit odd to have a validation that checks for not having something
+  # I would reverse the logic here
   def no_bombs?(neighbors)
     neighbors.each do |neighbor|
       return false if @board_nodes[neighbor].bomb
@@ -89,12 +92,12 @@ class Minesweeper
     position = (x * @board_size) + y
     [state, position]
   end
-
+  # don't need the 'return true here'. just write the condition "@board_nodes..."
   def is_bomb?(position)
     return true if @board_nodes[position].bomb
     false
   end
-
+  # same as above
   def win?
     return true if @spaces_cleared  >= @board_size**2 - 10
   end
@@ -134,7 +137,7 @@ class Minesweeper
       end
     end
   end
-
+# watch the spurious white space
 end
 
 class BoardNode
@@ -160,6 +163,8 @@ class BoardNode
   end
 
   def add_neighbors(board_size)
+    # not following what's going on here. why are you resetting the same variable
+    # so many times?
     all_positions = [@position - board_size - 1, @position - board_size,
                     @position - board_size + 1, @position - 1,
                     @position + 1, @position + board_size - 1,
